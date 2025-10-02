@@ -1,18 +1,24 @@
 import { BeautifulAlert } from '@/components/BeautifulAlert';
 import { useAuth } from '@/contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
@@ -26,19 +32,69 @@ export default function LoginScreen() {
   const [role, setRole] = useState<'admin' | 'user'>('user');
   const [isLoading, setIsLoading] = useState(false);
   const { login, register } = useAuth();
+  
+  // Reanimated shared values
+  const fadeValue = useSharedValue(0);
+  const slideValue = useSharedValue(50);
+  const buttonScale = useSharedValue(1);
+
+  // Initial animation
+  useEffect(() => {
+    fadeValue.value = withTiming(1, { duration: 1000 });
+    slideValue.value = withSpring(0, {
+      damping: 15,
+      stiffness: 100,
+    });
+  }, []);
+
+  // Animated styles
+  const formAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: fadeValue.value,
+      transform: [{ translateY: slideValue.value }],
+    };
+  });
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: buttonScale.value }],
+    };
+  });
+
+  // Button press animation
+  const animateButtonPress = () => {
+    buttonScale.value = withTiming(0.95, { duration: 100 }, () => {
+      buttonScale.value = withTiming(1, { duration: 100 });
+    });
+  };
 
   const handleLogin = async () => {
     if (!username || !password) {
+      console.log('Showing validation error');
       BeautifulAlert.error('Lỗi', 'Vui lòng nhập tài khoản và mật khẩu');
       return;
     }
 
+    console.log('Starting login process...');
+    const startTime = Date.now();
     setIsLoading(true);
-    const success = await login(username, password);
-    setIsLoading(false);
+    
+    try {
+      const success = await login(username, password);
+      const loginTime = Date.now() - startTime;
+      console.log(`Login completed in ${loginTime}ms`);
+      
+      setIsLoading(false);
 
-    if (!success) {
-      BeautifulAlert.error('Đăng nhập thất bại', 'Tài khoản hoặc mật khẩu không đúng');
+      if (!success) {
+        console.log('Showing login error');
+        BeautifulAlert.error('Đăng nhập thất bại', 'Tài khoản hoặc mật khẩu không đúng');
+      }
+    } catch (error) {
+      const loginTime = Date.now() - startTime;
+      console.log(`Login failed after ${loginTime}ms:`, error);
+      setIsLoading(false);
+      BeautifulAlert.error('Lỗi kết nối', 'Không thể kết nối đến server. Vui lòng thử lại.');
     }
   };
 
@@ -105,7 +161,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Login/Register Form */}
-          <View style={styles.form}>
+          <Animated.View style={[styles.form, formAnimatedStyle]}>
             {!isLoginMode && (
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Họ và tên</Text>
@@ -217,18 +273,24 @@ export default function LoginScreen() {
               </View>
             )}
 
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
+            <Animated.View style={buttonAnimatedStyle}>
+              <TouchableOpacity
+                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                onPress={() => {
+                  animateButtonPress();
+                  setTimeout(handleSubmit, 100);
+                }}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
               <Text style={styles.loginButtonText}>
                 {isLoading 
-                  ? (isLoginMode ? 'Đang đăng nhập...' : 'Đang đăng ký...') 
+                  ? (isLoginMode ? '🔄 Đang đăng nhập...' : '🔄 Đang đăng ký...') 
                   : (isLoginMode ? 'Đăng nhập' : 'Đăng ký')
                 }
               </Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </Animated.View>
 
             <TouchableOpacity style={styles.switchModeButton} onPress={toggleMode}>
               <Text style={styles.switchModeText}>
@@ -238,7 +300,37 @@ export default function LoginScreen() {
                 }
               </Text>
             </TouchableOpacity>
-          </View>
+
+            {/* Test Buttons */}
+            <TouchableOpacity 
+              style={styles.demoButton} 
+              onPress={() => {
+                console.log('Test button pressed');
+                BeautifulAlert.error('Test Lỗi', 'Đây là thông báo lỗi test để kiểm tra hiển thị');
+              }}
+            >
+              <Text style={styles.demoButtonText}>🧪 Test Thông Báo Lỗi</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.demoButton} 
+              onPress={async () => {
+                console.log('Testing API connection...');
+                const apiService = require('../services/apiService').default;
+                const startTime = Date.now();
+                try {
+                  const workingURL = await apiService.findWorkingURL();
+                  const testTime = Date.now() - startTime;
+                  BeautifulAlert.success('Kết nối thành công!', `Server: ${workingURL}\nThời gian: ${testTime}ms`);
+                } catch (error) {
+                  const testTime = Date.now() - startTime;
+                  BeautifulAlert.error('Kết nối thất bại', `Lỗi: ${error}\nThời gian: ${testTime}ms`);
+                }
+              }}
+            >
+              <Text style={styles.demoButtonText}>🌐 Test Kết Nối API</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Features */}
           <View style={styles.features}>

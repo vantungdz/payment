@@ -1,14 +1,20 @@
 import React from 'react';
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,42 +47,35 @@ export const CustomModal: React.FC<CustomModalProps> = ({
   showCloseButton = true,
   children,
 }) => {
-  const [animation] = React.useState(new Animated.Value(0));
+  const animationProgress = useSharedValue(visible ? 1 : 0);
 
   React.useEffect(() => {
     if (visible) {
-      Animated.timing(animation, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      animationProgress.value = withSpring(1, {
+        damping: 15,
+        stiffness: 150,
+      });
     } else {
-      Animated.timing(animation, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      animationProgress.value = withTiming(0, { duration: 200 });
     }
-  }, [visible, animation]);
+  }, [visible]);
 
-  const modalTransform = {
-    transform: [
-      {
-        scale: animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.8, 1],
-        }),
-      },
-    ],
-    opacity: animation,
-  };
+  const modalAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          scale: interpolate(animationProgress.value, [0, 1], [0.8, 1]),
+        },
+      ],
+      opacity: animationProgress.value,
+    };
+  });
 
-  const backdropOpacity = {
-    opacity: animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 0.5],
-    }),
-  };
+  const backdropAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(animationProgress.value, [0, 1], [0, 0.5]),
+    };
+  });
 
   const getButtonStyle = (style?: string) => {
     switch (style) {
@@ -112,11 +111,11 @@ export const CustomModal: React.FC<CustomModalProps> = ({
       statusBarTranslucent
     >
       <View style={styles.container}>
-        <Animated.View style={[styles.backdrop, backdropOpacity]} />
+        <Animated.View style={[styles.backdrop, backdropAnimatedStyle]} />
         <TouchableWithoutFeedback onPress={onBackdropPress}>
           <View style={styles.backdropTouchable}>
             <TouchableWithoutFeedback>
-              <Animated.View style={[styles.modal, modalTransform]}>
+              <Animated.View style={[styles.modal, modalAnimatedStyle]}>
                 {/* Header */}
                 <View style={styles.header}>
                   <Text style={styles.title}>{title}</Text>
@@ -184,7 +183,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modal: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     marginHorizontal: 20,
     maxWidth: width - 40,
@@ -195,9 +194,11 @@ const styles = StyleSheet.create({
       width: 0,
       height: 10,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 15,
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
+    elevation: 20,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   header: {
     flexDirection: 'row',
@@ -236,8 +237,9 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#333',
+    color: '#1a1a1a',
     marginBottom: 16,
+    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -275,10 +277,19 @@ const styles = StyleSheet.create({
     color: '#495057',
   },
   dangerButton: {
-    backgroundColor: '#dc3545',
+    backgroundColor: '#ff4757',
+    shadowColor: '#ff4757',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   dangerButtonText: {
-    color: '#fff',
+    color: '#ffffff',
+    fontWeight: '700',
   },
   successButton: {
     backgroundColor: '#28a745',

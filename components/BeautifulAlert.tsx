@@ -38,10 +38,19 @@ class BeautifulAlertManager {
     buttons: BeautifulAlertButton[] = [],
     options?: { showCloseButton?: boolean }
   ) {
-    if (!this.setState) return;
+    if (!this.setState) {
+      console.log('BeautifulAlert: setState not available');
+      return;
+    }
 
     const formattedTitle = this.formatTitle(title);
     const formattedMessage = this.formatMessage(message);
+    
+    console.log('BeautifulAlert.show called:', { 
+      title: formattedTitle, 
+      message: formattedMessage, 
+      buttonsCount: buttons.length 
+    });
     
     // Nếu không có buttons, thêm button OK mặc định
     const finalButtons = buttons.length > 0 ? buttons : [
@@ -117,6 +126,7 @@ class BeautifulAlertManager {
   }
 
   error(title: string, message: string, onOk?: () => void) {
+    console.log('BeautifulAlert.error called:', { title, message });
     this.show(title, message, [
       { text: 'Đã hiểu 😞', onPress: onOk, style: 'danger' }
     ]);

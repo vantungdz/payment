@@ -15,8 +15,16 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +41,12 @@ export default function AdminDashboard() {
   const [showSplitPopup, setShowSplitPopup] = useState(false);
   const [showAdminPopup, setShowAdminPopup] = useState(false);
   const [adminAction, setAdminAction] = useState<any>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Reanimated shared values
+  const dropdownProgress = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
+  const menuOpacity = useSharedValue(0);
   
   const colorScheme = useColorScheme();
   const { user, logout } = useAuth();
@@ -41,6 +55,49 @@ export default function AdminDashboard() {
     loadPaymentRequests();
     loadUsers();
   }, []);
+
+  // Animation effect for dropdown menu
+  useEffect(() => {
+    if (showUserMenu) {
+      dropdownProgress.value = withSpring(1, {
+        damping: 15,
+        stiffness: 150,
+      });
+      menuOpacity.value = withTiming(1, { duration: 200 });
+    } else {
+      dropdownProgress.value = withTiming(0, { duration: 200 });
+      menuOpacity.value = withTiming(0, { duration: 150 });
+    }
+  }, [showUserMenu]);
+
+  // Animated styles
+  const dropdownAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      maxHeight: interpolate(dropdownProgress.value, [0, 1], [0, 200]),
+      opacity: menuOpacity.value,
+      transform: [
+        {
+          translateY: interpolate(dropdownProgress.value, [0, 1], [-20, 0]),
+        },
+      ],
+    };
+  });
+
+  const arrowAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          rotate: `${interpolate(dropdownProgress.value, [0, 1], [0, 180])}deg`,
+        },
+      ],
+    };
+  });
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: buttonScale.value }],
+    };
+  });
 
   const loadPaymentRequests = async () => {
     try {
@@ -76,6 +133,85 @@ export default function AdminDashboard() {
       style: 'currency',
       currency: 'VND'
     }).format(amount);
+  };
+
+  // Animation functions
+  const animateButtonPress = () => {
+    buttonScale.value = withTiming(0.95, { duration: 100 }, () => {
+      buttonScale.value = withTiming(1, { duration: 100 });
+    });
+  };
+
+  const animateUserMenuToggle = () => {
+    setShowUserMenu(!showUserMenu);
+    animateButtonPress();
+  };
+
+  const closeUserMenu = () => {
+    if (showUserMenu) {
+      setShowUserMenu(false);
+    }
+  };
+
+  // Animated Button Component
+  const AnimatedButton = ({ 
+    style, 
+    onPress, 
+    children, 
+    disabled = false 
+  }: { 
+    style: any, 
+    onPress: () => void, 
+    children: React.ReactNode,
+    disabled?: boolean
+  }) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [{ scale: scale.value }],
+      };
+    });
+
+    const handlePress = () => {
+      if (disabled) return;
+      
+      scale.value = withTiming(0.95, { duration: 100 }, () => {
+        scale.value = withTiming(1, { duration: 100 });
+      });
+      
+      setTimeout(() => onPress(), 50);
+    };
+
+    return (
+      <Animated.View style={animatedStyle}>
+        <TouchableOpacity 
+          style={[style, disabled && { opacity: 0.6 }]} 
+          onPress={handlePress}
+          activeOpacity={0.8}
+          disabled={disabled}
+        >
+          {children}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  // Rút gọn username nếu quá dài
+  const truncateUsername = (username: string, maxLength: number = 20): string => {
+    if (username.length <= maxLength) return username;
+    
+    // Nếu là email, giữ phần trước @ và rút gọn
+    if (username.includes('@')) {
+      const [localPart, domain] = username.split('@');
+      if (localPart.length > maxLength - 8) {
+        return `${localPart.substring(0, maxLength - 8)}...@${domain}`;
+      }
+      return username;
+    }
+    
+    // Nếu không phải email, rút gọn bình thường
+    return `${username.substring(0, maxLength - 3)}...`;
   };
 
   // Format number with thousands separator while typing
@@ -304,17 +440,59 @@ export default function AdminDashboard() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <TouchableWithoutFeedback onPress={closeUserMenu}>
+      <ScrollView style={styles.container}>
       {/* Header */}
       <ThemedView style={styles.header}>
-        <View style={styles.userInfo}>
-          <Text style={styles.welcomeText}>Xin chào, {user?.username} 👋</Text>
-          <Text style={styles.roleText}>Quản trị viên</Text>
-        </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
+        <Animated.View style={buttonAnimatedStyle}>
+          <TouchableOpacity 
+            style={styles.userInfoExpanded} 
+            onPress={animateUserMenuToggle}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.welcomeText} numberOfLines={1} ellipsizeMode="middle">
+              Xin chào, {user?.username ? truncateUsername(user.username) : 'Admin'} 👋
+            </Text>
+            <View style={styles.roleContainer}>
+              <Text style={styles.roleText}>Quản trị viên</Text>
+              <Animated.Text style={[styles.arrowIcon, arrowAnimatedStyle]}>
+                ▼
+              </Animated.Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       </ThemedView>
+
+      {/* User Menu Dropdown */}
+      {showUserMenu && (
+        <Animated.View style={[styles.userMenuDropdown, dropdownAnimatedStyle]}>
+          <View style={styles.userMenuContent}>
+            <Text style={styles.fullUsernameText} numberOfLines={2}>
+              📧 {user?.username}
+            </Text>
+            <Text style={styles.userDetailsText}>
+              👤 {user?.fullName || 'Admin'}
+            </Text>
+            <Text style={styles.userRoleText}>
+              🔑 Quản trị viên
+            </Text>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity 
+              style={styles.dropdownLogoutButton} 
+              onPress={() => {
+                animateButtonPress();
+                setTimeout(() => {
+                  closeUserMenu();
+                  setTimeout(logout, 200); // Đợi animation đóng xong
+                }, 150);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.dropdownLogoutText}>🚪 Đăng xuất</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Payment Creation Form */}
       <ThemedView style={styles.section}>
@@ -365,9 +543,9 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.autoSplitButton} onPress={autoSplit}>
+        <AnimatedButton style={styles.autoSplitButton} onPress={autoSplit}>
           <Text style={styles.autoSplitText}>⚡ Chia đều tự động</Text>
-        </TouchableOpacity>
+        </AnimatedButton>
       </ThemedView>
 
       {/* Users Selection */}
@@ -436,9 +614,9 @@ export default function AdminDashboard() {
           })
         )}
 
-        <TouchableOpacity style={styles.sendAllButton} onPress={sendAllRequests}>
+        <AnimatedButton style={styles.sendAllButton} onPress={sendAllRequests}>
           <Text style={styles.sendAllButtonText}>📤 Gửi tất cả yêu cầu đã chọn</Text>
-        </TouchableOpacity>
+        </AnimatedButton>
       </ThemedView>
 
       {/* Payment Requests History */}
@@ -521,6 +699,7 @@ export default function AdminDashboard() {
         }}
       />
     </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -531,7 +710,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     paddingTop: 50,
@@ -539,29 +718,85 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  userInfo: {
-    flexDirection: 'row',
+  userInfoExpanded: {
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
   },
   welcomeText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#374151',
+    flexShrink: 1,
+    textAlign: 'center',
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
   roleText: {
     fontSize: 14,
     color: '#64748b',
-    marginTop: 2,
+    textAlign: 'center',
+    marginRight: 4,
   },
-  logoutButton: {
+  arrowIcon: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  userMenuDropdown: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  userMenuContent: {
+    padding: 20,
+    paddingTop: 10,
+  },
+  fullUsernameText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  userDetailsText: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  userRoleText: {
+    fontSize: 14,
+    color: '#059669',
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+    marginBottom: 16,
+  },
+  dropdownLogoutButton: {
     backgroundColor: '#ef4444',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  logoutText: {
+  dropdownLogoutText: {
     color: 'white',
     fontWeight: '600',
+    fontSize: 16,
   },
   section: {
     margin: 16,
