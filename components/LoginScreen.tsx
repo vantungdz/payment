@@ -3,22 +3,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
+import { LoginScreenStyles as styles } from '../styles/components/LoginScreen.styles';
 
 const { width } = Dimensions.get('window');
 
@@ -70,29 +70,20 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      console.log('Showing validation error');
       BeautifulAlert.error('Lỗi', 'Vui lòng nhập tài khoản và mật khẩu');
       return;
     }
 
-    console.log('Starting login process...');
-    const startTime = Date.now();
     setIsLoading(true);
     
     try {
       const success = await login(username, password);
-      const loginTime = Date.now() - startTime;
-      console.log(`Login completed in ${loginTime}ms`);
-      
       setIsLoading(false);
 
       if (!success) {
-        console.log('Showing login error');
         BeautifulAlert.error('Đăng nhập thất bại', 'Tài khoản hoặc mật khẩu không đúng');
       }
     } catch (error) {
-      const loginTime = Date.now() - startTime;
-      console.log(`Login failed after ${loginTime}ms:`, error);
       setIsLoading(false);
       BeautifulAlert.error('Lỗi kết nối', 'Không thể kết nối đến server. Vui lòng thử lại.');
     }
@@ -301,35 +292,6 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Test Buttons */}
-            <TouchableOpacity 
-              style={styles.demoButton} 
-              onPress={() => {
-                console.log('Test button pressed');
-                BeautifulAlert.error('Test Lỗi', 'Đây là thông báo lỗi test để kiểm tra hiển thị');
-              }}
-            >
-              <Text style={styles.demoButtonText}>🧪 Test Thông Báo Lỗi</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.demoButton} 
-              onPress={async () => {
-                console.log('Testing API connection...');
-                const apiService = require('../services/apiService').default;
-                const startTime = Date.now();
-                try {
-                  const workingURL = await apiService.findWorkingURL();
-                  const testTime = Date.now() - startTime;
-                  BeautifulAlert.success('Kết nối thành công!', `Server: ${workingURL}\nThời gian: ${testTime}ms`);
-                } catch (error) {
-                  const testTime = Date.now() - startTime;
-                  BeautifulAlert.error('Kết nối thất bại', `Lỗi: ${error}\nThời gian: ${testTime}ms`);
-                }
-              }}
-            >
-              <Text style={styles.demoButtonText}>🌐 Test Kết Nối API</Text>
-            </TouchableOpacity>
           </Animated.View>
 
           {/* Features */}
@@ -353,158 +315,4 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  logoEmoji: {
-    fontSize: 40,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
-  },
-  form: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: 'white',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  loginButton: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  loginButtonDisabled: {
-    opacity: 0.7,
-  },
-  loginButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#667eea',
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-  },
-  roleButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-  },
-  roleButtonActive: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderColor: 'rgba(255,255,255,0.6)',
-  },
-  roleButtonText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  roleButtonTextActive: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  switchModeButton: {
-    marginTop: 20,
-    alignItems: 'center',
-    padding: 10,
-  },
-  switchModeText: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    textDecorationLine: 'underline',
-  },
-  demoButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  demoButtonText: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    textDecorationLine: 'underline',
-  },
-  features: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 40,
-    paddingTop: 30,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
-  },
-  feature: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  featureIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  featureText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
-  },
-});
+// Styles moved to ../styles/components/LoginScreen.styles.ts

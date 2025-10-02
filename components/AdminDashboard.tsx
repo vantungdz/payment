@@ -11,7 +11,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Dimensions,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,6 +24,7 @@ import Animated, {
   withSpring,
   withTiming
 } from 'react-native-reanimated';
+import { AdminDashboardStyles as styles } from '../styles/components/AdminDashboard.styles';
 
 const { width } = Dimensions.get('window');
 
@@ -564,50 +564,29 @@ export default function AdminDashboard() {
             const amount = selectedUsers[userItem._id]?.amount || 0;
             
             return (
-              <View key={userItem._id} style={[styles.userCard, isSelected && styles.userCardSelected]}>
+              <View key={userItem._id} style={[styles.userItem, isSelected && styles.userItemSelected]}>
                 <TouchableOpacity 
-                  style={styles.userHeader}
+                  style={styles.userInfo}
                   onPress={() => toggleUserSelection(userItem._id)}
                 >
-                  <View style={styles.userInfoRow}>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                      {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                    </View>
-                    <View style={styles.userDetails}>
-                      <Text style={styles.userName}>{userItem.fullName}</Text>
-                      <Text style={styles.userContact}>{userItem.phone}</Text>
-                      <Text style={styles.userEmail}>{userItem.email}</Text>
-                    </View>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{userItem.fullName}</Text>
+                    <Text style={styles.userPhone}>{userItem.phone}</Text>
                   </View>
                 </TouchableOpacity>
 
                 {isSelected && (
-                  <View style={styles.amountSection}>
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Số tiền:</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={amount > 0 ? formatNumber(amount.toString()) : ''}
-                        onChangeText={(value) => handleAmountChange(userItem._id, value)}
-                        placeholder="VD: 2,000,000"
-                        keyboardType="numeric"
-                        placeholderTextColor="#6b7280"
-                      />
-                    </View>
-
-                    <View style={styles.userFooter}>
-                      <Text style={styles.amountDisplay}>
-                        {amount > 0 ? formatMoney(amount) : 'Chưa có số tiền'}
-                      </Text>
-                      <TouchableOpacity
-                        style={[styles.sendButton, amount <= 0 && styles.sendButtonDisabled]}
-                        onPress={() => sendPaymentRequest(userItem, amount)}
-                        disabled={amount <= 0}
-                      >
-                        <Text style={styles.sendButtonText}>Gửi yêu cầu</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                  <TextInput
+                    style={styles.amountInput}
+                    value={amount > 0 ? formatNumber(amount.toString()) : ''}
+                    onChangeText={(value) => handleAmountChange(userItem._id, value)}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    placeholderTextColor="#6b7280"
+                  />
                 )}
               </View>
             );
@@ -631,9 +610,9 @@ export default function AdminDashboard() {
           </View>
         ) : (
           paymentRequests.map((request) => (
-            <View key={request._id} style={styles.paymentRequest}>
+            <View key={request._id} style={styles.paymentRequestItem}>
               <View style={styles.paymentHeader}>
-                <Text style={styles.paymentTitle}>{request.title}</Text>
+                <Text style={styles.paymentDescription}>{request.title}</Text>
                 <Text style={[styles.paymentStatus, 
                   request.status === 'completed' && styles.statusCompleted,
                   request.status === 'sent' && styles.statusSent,
@@ -648,13 +627,9 @@ export default function AdminDashboard() {
                 {formatMoney(request.totalAmount)}
               </Text>
               
-              <Text style={styles.paymentDescription}>
-                {request.description}
-              </Text>
-              
               <View style={styles.participantsList}>
                 {request.participants.map((participant, index) => (
-                  <View key={index} style={styles.participant}>
+                  <View key={index} style={styles.participantItem}>
                     <Text style={styles.participantName}>
                       {participant.name} ({participant.phone})
                     </Text>
@@ -665,14 +640,14 @@ export default function AdminDashboard() {
                       participant.status === 'paid' && styles.statusPaid,
                       participant.status === 'pending' && styles.statusPending
                     ]}>
-                      {participant.status === 'paid' ? '✅ Đã thanh toán' : '⏳ Chờ thanh toán'}
+                      {participant.status === 'paid' ? '✅' : '⏳'}
                     </Text>
                   </View>
                 ))}
               </View>
               
               <Text style={styles.paymentDate}>
-                Tạo: {new Date(request.createdAt).toLocaleDateString('vi-VN')}
+                {new Date(request.createdAt).toLocaleDateString('vi-VN')}
               </Text>
             </View>
           ))
@@ -703,440 +678,4 @@ export default function AdminDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  userInfoExpanded: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#374151',
-    flexShrink: 1,
-    textAlign: 'center',
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  roleText: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-    marginRight: 4,
-  },
-  arrowIcon: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  userMenuDropdown: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  userMenuContent: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  fullUsernameText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  userDetailsText: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 8,
-  },
-  userRoleText: {
-    fontSize: 14,
-    color: '#059669',
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: '#e2e8f0',
-    marginBottom: 16,
-  },
-  dropdownLogoutButton: {
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dropdownLogoutText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  section: {
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#374151',
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    color: '#374151',
-    marginLeft: 8,
-    flex: 1,
-  },
-  includeSelfSection: {
-    backgroundColor: '#f1f5f9',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  includeSelfContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  includeSelfLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#4b5563',
-    marginLeft: 12,
-    flex: 1,
-  },
-  includeSelfHint: {
-    fontSize: 13,
-    color: '#64748b',
-    marginLeft: 36,
-    fontStyle: 'italic',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#4b5563',
-  },
-  input: {
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: 'white',
-    color: '#1f2937', // Màu text tối để dễ đọc
-  },
-  autoSplitButton: {
-    backgroundColor: '#8b5cf6',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  autoSplitText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  personCard: {
-    backgroundColor: '#f1f5f9',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  personHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  personIndex: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-  },
-  removeButton: {
-    backgroundColor: '#ef4444',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeButtonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  personInputs: {
-    gap: 8,
-  },
-  nameInput: {
-    flex: 1,
-  },
-  phoneInput: {
-    flex: 1,
-  },
-  amountInput: {
-    flex: 1,
-  },
-  personFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  amountDisplay: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#059669',
-  },
-  sendButton: {
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#9ca3af',
-  },
-  sendButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  addButton: {
-    backgroundColor: '#3b82f6',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  userCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    overflow: 'hidden',
-  },
-  userCardSelected: {
-    borderColor: '#3b82f6',
-    borderWidth: 2,
-  },
-  userHeader: {
-    padding: 16,
-  },
-  userInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  checkboxSelected: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
-  checkmark: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 2,
-  },
-  userContact: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 1,
-  },
-  userEmail: {
-    fontSize: 13,
-    color: '#9ca3af',
-  },
-  amountSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-  },
-  userFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  sendAllButton: {
-    backgroundColor: '#059669',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  sendAllButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontStyle: 'italic',
-  },
-  paymentRequest: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  paymentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  paymentTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    color: '#374151',
-  },
-  paymentStatus: {
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  statusCompleted: {
-    backgroundColor: '#d1fae5',
-    color: '#059669',
-  },
-  statusSent: {
-    backgroundColor: '#dbeafe',
-    color: '#2563eb',
-  },
-  statusDraft: {
-    backgroundColor: '#fef3c7',
-    color: '#d97706',
-  },
-  paymentAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#059669',
-    marginBottom: 8,
-  },
-  paymentDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  participantsList: {
-    gap: 8,
-    marginBottom: 12,
-  },
-  participant: {
-    backgroundColor: '#ffffff',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  participantName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4b5563',
-    marginBottom: 4,
-  },
-  participantAmount: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#059669',
-    marginBottom: 4,
-  },
-  participantStatus: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  statusPaid: {
-    color: '#059669',
-  },
-  statusPending: {
-    color: '#d97706',
-  },
-  paymentDate: {
-    fontSize: 12,
-    color: '#9ca3af',
-    textAlign: 'right',
-  },
-});
+// Styles moved to ../styles/components/AdminDashboard.styles.ts

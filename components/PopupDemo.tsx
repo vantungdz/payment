@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
     ScrollView,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { PopupDemoStyles as styles } from '../styles/components/PopupDemo.styles';
 import { AdminPopup, SplitMoneyPopup } from './AdminPopup';
 import { BeautifulAlert } from './BeautifulAlert';
 import PaymentPopup from './PaymentPopup';
@@ -195,74 +195,4 @@ export default function PopupDemo() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#6366f1',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
-  },
-  section: {
-    margin: 16,
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  demoButton: {
-    backgroundColor: '#ec4899',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    margin: 16,
-    padding: 20,
-    backgroundColor: '#f0fdf4',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-  },
-  footerText: {
-    fontSize: 16,
-    color: '#059669',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-});
+// Styles moved to ../styles/components/PopupDemo.styles.ts
